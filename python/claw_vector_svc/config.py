@@ -31,6 +31,11 @@ class Settings(BaseSettings):
         alias="CLAW_VECTOR_API_KEYS",
     )
     embed_rate_limit_per_minute: int = Field(default=200, alias="EMBED_RATE_LIMIT_PER_MINUTE")
+    # Opt-in: serve gRPC without an API key. Only for deployments whose network
+    # already restricts who can connect (e.g. a cluster-internal Service behind
+    # a NetworkPolicy), for clients that cannot send a key, such as the
+    # claw-vector Rust client embedded in clawdb-server.
+    allow_unauthenticated: bool = Field(default=False, alias="ALLOW_UNAUTHENTICATED")
 
     model_config = SettingsConfigDict(
         populate_by_name=True,

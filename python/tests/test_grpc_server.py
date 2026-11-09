@@ -74,3 +74,24 @@ async def test_embed_rejects_invalid_api_key(mock_embedder: EmbedderService) -> 
 
     with pytest.raises(RuntimeError):
         await secured.Embed(request, context)
+
+
+@pytest.mark.asyncio
+async def test_missing_key_is_rejected_by_default(mock_embedder: EmbedderService) -> None:
+    servicer = EmbeddingServicer(mock_embedder, {blake3.blake3(b"valid").hexdigest()}, lambda: True)
+    context = MagicMock()
+    context.invocation_metadata.return_value = ()
+    context.abort = AsyncMock(side_effect=RuntimeError("aborted"))
+    with pytest.raises(RuntimeError):
+        await servicer.Embed(vector_pb2.EmbedRequest(texts=["hello"], normalize=True), context)
+
+
+@pytest.mark.asyncio
+async def test_allow_unauthenticated_serves_without_a_key(mock_embedder: EmbedderService) -> None:
+    servicer = EmbeddingServicer(mock_embedder, set(), lambda: True, allow_unauthenticated=True)
+    context = MagicMock()
+    context.invocation_metadata.return_value = ()
+    context.abort = AsyncMock(side_effect=RuntimeError("aborted"))
+    response = await servicer.Embed(vector_pb2.EmbedRequest(texts=["hello", "world"], normalize=True), context)
+    assert len(response.vectors) == 2
+    context.abort.assert_not_called()

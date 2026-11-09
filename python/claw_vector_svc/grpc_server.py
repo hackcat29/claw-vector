@@ -66,12 +66,16 @@ class EmbeddingServicer(vector_pb2_grpc.EmbeddingServiceServicer):
         embedder: EmbedderService,
         allowed_key_hashes: set[str],
         is_warmup_complete: Callable[[], bool],
+        allow_unauthenticated: bool = False,
     ) -> None:
         self._embedder = embedder
         self._allowed_key_hashes = allowed_key_hashes
         self._is_warmup_complete = is_warmup_complete
+        self._allow_unauthenticated = allow_unauthenticated
 
     async def _authorize(self, context) -> None:
+        if self._allow_unauthenticated:
+            return
         metadata = dict(context.invocation_metadata())
         raw = metadata.get("authorization")
         if not raw:
@@ -165,11 +169,13 @@ async def start_grpc_server(
         value.strip().lower() for value in raw_hashes.split(",") if value.strip()
     }
     vector_pb2_grpc.add_EmbeddingServiceServicer_to_server(
-        EmbeddingServicer(embedder, allowed_key_hashes, is_warmup_complete),
+        EmbeddingServicer(embedder, allowed_key_hashes, is_warmup_complete, settings.allow_unauthenticated),
         server,
     )
     address = f"{settings.grpc_host}:{settings.grpc_port}"
     server.add_insecure_port(address)
     await server.start()
+    if settings.allow_unauthenticated:
+        log.warning("gRPC server accepts unauthenticated requests (ALLOW_UNAUTHENTICATED)", address=address)
     log.info("gRPC server started", address=address)
     return server
