@@ -1,5 +1,7 @@
 # claw-vector
 
+![Founder School · FS26-2 alumni](https://img.shields.io/badge/Founder%20School-FS26--2%20alumni-111111)
+
 claw-vector is the semantic memory engine behind ClawDB. It combines SQLite-backed metadata and FTS5 keyword search, memory-mapped vector persistence, adaptive Flat and HNSW indexing, hybrid retrieval, metadata filtering, reranking, and a Python embedding microservice exposed over gRPC and HTTP.
 
 ## What It Provides
